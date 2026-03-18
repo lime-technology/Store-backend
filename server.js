@@ -2,42 +2,23 @@
 // Run with: npm start
 
 const express = require("express");
+const cors = require("cors");
 const app = express();
 const PORT = 3000;
 
-// Middleware: parse JSON bodies
+// Middleware: enable CORS and parse JSON bodies
+app.use(cors());
 app.use(express.json());
 
-// Middleware: enable CORS so any frontend can connect
+// Log every incoming request
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") {
-    res.sendStatus(200);
-    return;
-  }
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// GET / - Welcome page (so the preview doesn't show a blank error)
+// GET / - Confirm server is running
 app.get("/", (req, res) => {
-  res.send(`
-    <html>
-      <head><title>StoreInsight AI API</title></head>
-      <body style="font-family:sans-serif;padding:40px;max-width:600px;margin:auto">
-        <h1>StoreInsight AI Backend</h1>
-        <p>Server is running on port 3000.</p>
-        <h2>Available Endpoints</h2>
-        <ul>
-          <li><code>GET /healthz</code> — Health check</li>
-          <li><code>GET /dashboard</code> — Store analytics</li>
-          <li><code>POST /scan</code> — Scan a store (body: { storeUrl })</li>
-        </ul>
-      </body>
-    </html>
-  `);
+  res.send("Server running on port 3000");
 });
 
 // GET /healthz - Health check

@@ -1,0 +1,119 @@
+Fix my Replit backend completely and make it run successfully.
+
+Current issues:
+- Too many unnecessary folders (lib, scripts, api-spec, etc.)
+- Multiple package.json files
+- Server is not running
+- Preview shows "We couldn't reach this app"
+
+----------------------------------------
+
+TASK:
+
+1. CLEAN PROJECT
+- Ignore or remove unnecessary folders:
+  lib/
+  scripts/
+  api-spec/
+  artifacts/
+- Keep only essential files:
+  server.js
+  package.json
+
+----------------------------------------
+
+2. FIX PACKAGE MANAGER
+- Remove pnpm usage
+- Use npm only
+- Delete pnpm-lock.yaml and pnpm-workspace.yaml if needed
+
+----------------------------------------
+
+3. CREATE SIMPLE BACKEND
+
+Create server.js with:
+
+- Express server
+- Port 3000
+- Enable CORS
+- JSON middleware
+
+APIs:
+
+GET / → return "Server running on port 3000"
+
+GET /healthz → return "OK"
+
+GET /dashboard → return:
+{
+  conversionRate: 2.4,
+  visitors: 1200,
+  orders: 28,
+  issues: [
+    "High drop-off on product page",
+    "Slow loading pages",
+    "Missing product images"
+  ]
+}
+
+POST /scan → accept { storeUrl }
+- wait 2 seconds
+- return:
+{
+  score: 62,
+  issues: [
+    "Users leaving product page",
+    "Checkout abandonment high"
+  ],
+  recommendations: [
+    "Improve product images",
+    "Reduce load time"
+  ]
+}
+
+----------------------------------------
+
+4. FIX ROOT package.json
+
+Ensure ONLY ONE package.json in root:
+
+{
+  "name": "store-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}
+
+----------------------------------------
+
+5. INSTALL & RUN
+
+- Run: npm install
+- Run: npm start
+
+----------------------------------------
+
+6. ENSURE SERVER WORKS
+
+- Console must show: "Server running on port 3000"
+- Preview must load successfully
+- /healthz should return OK
+
+----------------------------------------
+
+IMPORTANT:
+- Remove all complexity
+- Make project beginner-friendly
+- Ensure server actually runs
+- Fix any errors automatically
+
+----------------------------------------
+
+GOAL:
+Make backend LIVE and accessible so I can connect it to my frontend.
