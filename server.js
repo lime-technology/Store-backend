@@ -21,6 +21,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// GET / - Welcome page (so the preview doesn't show a blank error)
+app.get("/", (req, res) => {
+  res.send(`
+    <html>
+      <head><title>StoreInsight AI API</title></head>
+      <body style="font-family:sans-serif;padding:40px;max-width:600px;margin:auto">
+        <h1>StoreInsight AI Backend</h1>
+        <p>Server is running on port 3000.</p>
+        <h2>Available Endpoints</h2>
+        <ul>
+          <li><code>GET /healthz</code> — Health check</li>
+          <li><code>GET /dashboard</code> — Store analytics</li>
+          <li><code>POST /scan</code> — Scan a store (body: { storeUrl })</li>
+        </ul>
+      </body>
+    </html>
+  `);
+});
+
 // GET /healthz - Health check
 app.get("/healthz", (req, res) => {
   res.send("OK");
