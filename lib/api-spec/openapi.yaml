@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: StoreInsight AI API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: dashboard
+    description: Dashboard data
+  - name: scan
+    description: Store scanning
+  - name: store
+    description: Shopify store connection
+  - name: payments
+    description: Stripe payment sessions
 paths:
   /healthz:
     get:
@@ -24,7 +34,144 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignupResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login and get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard metrics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /scan:
+    post:
+      operationId: scanStore
+      tags: [scan]
+      summary: Scan a Shopify store
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanRequest"
+      responses:
+        "200":
+          description: Scan results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanResult"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /connect-store:
+    post:
+      operationId: connectStore
+      tags: [store]
+      summary: Connect a Shopify store
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectStoreRequest"
+      responses:
+        "200":
+          description: Store connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectStoreResponse"
+
+  /create-checkout-session:
+    post:
+      operationId: createCheckoutSession
+      tags: [payments]
+      summary: Create a Stripe checkout session
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSessionResponse"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +181,115 @@ components:
       required:
         - status
 
+    AuthRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    SignupResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        email:
+          type: string
+      required:
+        - message
+        - email
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        email:
+          type: string
+      required:
+        - token
+        - email
+
+    DashboardData:
+      type: object
+      properties:
+        conversionRate:
+          type: number
+        visitors:
+          type: integer
+        orders:
+          type: integer
+        issues:
+          type: array
+          items:
+            type: string
+      required:
+        - conversionRate
+        - visitors
+        - orders
+        - issues
+
+    ScanRequest:
+      type: object
+      properties:
+        storeUrl:
+          type: string
+      required:
+        - storeUrl
+
+    ScanResult:
+      type: object
+      properties:
+        score:
+          type: integer
+        issues:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+      required:
+        - score
+        - issues
+        - recommendations
+
+    ConnectStoreRequest:
+      type: object
+      properties:
+        storeUrl:
+          type: string
+      required:
+        - storeUrl
+
+    ConnectStoreResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        store:
+          type: string
+      required:
+        - status
+        - store
+
+    CheckoutSessionResponse:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

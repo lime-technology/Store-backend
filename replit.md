@@ -1,8 +1,8 @@
-# Workspace
+# Workspace — StoreInsight AI
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+StoreInsight AI backend — a SaaS API for scanning and analyzing Shopify stores. Built with Express + JWT auth in a pnpm workspace monorepo using TypeScript.
 
 ## Stack
 

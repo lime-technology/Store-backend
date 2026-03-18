@@ -1,0 +1,140 @@
+Build a complete backend for a SaaS app called "StoreInsight AI".
+
+Tech stack:
+- Node.js with Express
+- Use simple file-based storage (no complex DB for now)
+- Use JWT for authentication
+
+--------------------------------------------------
+
+FEATURES:
+
+1. SERVER SETUP
+- Create Express server running on port 3000
+- Enable CORS
+- Use JSON middleware
+
+--------------------------------------------------
+
+2. AUTH SYSTEM
+
+Create:
+- POST /signup
+- POST /login
+
+Details:
+- Store users in memory (array or JSON file)
+- Password stored as plain text (for now, simple)
+- Generate JWT token on login
+- Protect routes using middleware
+
+--------------------------------------------------
+
+3. DASHBOARD API
+
+Create:
+- GET /dashboard
+
+Return mock data:
+
+{
+  "conversionRate": 2.4,
+  "visitors": 1200,
+  "orders": 28,
+  "issues": [
+    "High drop-off on product page",
+    "Slow loading pages",
+    "Missing product images"
+  ]
+}
+
+--------------------------------------------------
+
+4. SCAN API (CORE FEATURE)
+
+Create:
+- POST /scan
+
+Input:
+{
+  "storeUrl": "example.myshopify.com"
+}
+
+Logic:
+- Simulate scan using timeout (2–3 seconds)
+- Return response:
+
+{
+  "score": 62,
+  "issues": [
+    "Users leaving product page",
+    "Checkout abandonment high",
+    "Images not optimized"
+  ],
+  "recommendations": [
+    "Improve product images",
+    "Reduce load time",
+    "Simplify checkout"
+  ]
+}
+
+--------------------------------------------------
+
+5. BASIC SHOPIFY CONNECT (MOCK)
+
+Create:
+- POST /connect-store
+
+Input:
+{
+  "storeUrl": "store.myshopify.com"
+}
+
+Response:
+{
+  "status": "connected",
+  "store": "store.myshopify.com"
+}
+
+--------------------------------------------------
+
+6. STRIPE PAYMENT (MOCK)
+
+Create:
+- POST /create-checkout-session
+
+Return:
+{
+  "url": "https://stripe.com/mock-checkout"
+}
+
+--------------------------------------------------
+
+7. ROUTE PROTECTION
+
+- Protect /dashboard and /scan with JWT middleware
+
+--------------------------------------------------
+
+8. PROJECT STRUCTURE
+
+- server.js (main file)
+- routes inside same file (simple)
+- comments explaining each part
+
+--------------------------------------------------
+
+9. EXTRA
+
+- Add console logs for requests
+- Keep code simple and beginner-friendly
+- Add instructions in comments on how to run
+
+--------------------------------------------------
+
+IMPORTANT:
+
+- Do NOT overcomplicate
+- Keep everything working
+- Focus on functionality
+- Use mock data where needed
