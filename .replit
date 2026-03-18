@@ -6,9 +6,11 @@ id = "artifacts/api-server"
 [[artifacts]]
 id = "artifacts/mockup-sandbox"
 
+run = "npm start"
+language = "nodejs"
+
 [deployment]
-router = "application"
-deploymentTarget = "autoscale"
+run = ["sh", "-c", "npm install && npm start"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
@@ -30,13 +32,13 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "node server.js"
-waitForPort = 3000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node index.js"
+waitForPort = 3000
 
 [agent]
 stack = "PNPM_WORKSPACE"
@@ -45,3 +47,8 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+
+run = "npm start"
+
+language = "nodejs"
