@@ -4,7 +4,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware: enable CORS and parse JSON bodies
 app.use(cors());
@@ -18,7 +18,7 @@ app.use((req, res, next) => {
 
 // GET / - Confirm server is running
 app.get("/", (req, res) => {
-  res.send("Server running on port 3000");
+  res.send("Server is running");
 });
 
 // GET /healthz - Health check
@@ -65,7 +65,8 @@ app.post("/scan", (req, res) => {
   }, 2000);
 });
 
-// Start the server
-app.listen(PORT, () => {
+
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
