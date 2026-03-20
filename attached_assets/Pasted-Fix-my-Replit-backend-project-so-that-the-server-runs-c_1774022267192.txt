@@ -1,0 +1,104 @@
+Fix my Replit backend project so that the server runs correctly and the preview works without errors.
+
+PROJECT CONTEXT:
+
+* Node.js backend using Express
+* File name: server.js
+* Currently facing:
+
+  * Preview not loading
+  * "took too long to respond"
+  * Server not starting properly
+
+REQUIREMENTS:
+
+1. INSTALL DEPENDENCIES
+
+* Ensure express and cors are installed
+* If missing, install them automatically
+
+2. FIX SERVER SETUP
+
+* Use this correct setup:
+
+const express = require("express");
+const cors = require("cors");
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+3. CREATE ROUTES
+
+A) GET /
+Return:
+"Server is running"
+
+B) GET /test
+Return:
+{ "status": "success", "message": "API working" }
+
+C) POST /analyze
+
+* Accept JSON body:
+  { "url": "https://example.com" }
+
+* If URL missing → return error JSON
+
+* Always return fast response (no delay):
+
+{
+"score": 68,
+"metrics": {
+"conversionRate": "3.2%",
+"visitors": 24521,
+"addToCart": "8.7%",
+"checkoutDrop": "42.1%"
+},
+"issues": [
+{ "title": "Slow page load", "severity": "High" },
+{ "title": "Missing product images", "severity": "High" }
+],
+"recommendations": [
+{ "text": "Improve speed", "impact": "+10%" }
+]
+}
+
+4. PORT FIX (IMPORTANT)
+
+* Use:
+  const PORT = process.env.PORT || 3000;
+
+* Start server with:
+  app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+  });
+
+5. FIX REPLIT RUN ISSUE
+
+* Create or update `.replit` file with:
+
+run = "node server.js"
+
+6. ERROR HANDLING
+
+* Use try/catch where needed
+* Ensure server never hangs
+* Always send response
+
+7. FINAL GOAL
+
+* Clicking Run should start server instantly
+* Preview should load successfully
+* Opening the URL should show:
+  "Server is running"
+* No timeout errors
+* No crashes
+
+IMPORTANT:
+
+* Keep code simple
+* Do not add unnecessary complexity
+* Ensure server responds within 1 second
+* Make everything fully working and ready for deployment on Render
