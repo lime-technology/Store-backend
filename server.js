@@ -1,72 +1,57 @@
-// StoreInsight AI - Simple Express Backend
-// Run with: npm start
-
-const express = require("express");
-const cors = require("cors");
+const express = require('express');
+const cors = require('cors');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware: enable CORS and parse JSON bodies
 app.use(cors());
 app.use(express.json());
 
-// Log every incoming request
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  next();
+// GET / - Health check
+app.get('/', (req, res) => {
+  res.send('Server is running');
 });
 
-// GET / - Confirm server is running
-app.get("/", (req, res) => {
-  res.send("Server is running");
+// GET /test - API status check
+app.get('/test', (req, res) => {
+  res.json({ status: 'success', message: 'API working' });
 });
 
-// GET /healthz - Health check
-app.get("/healthz", (req, res) => {
-  res.send("OK");
-});
+// POST /analyze - Shopify store analysis
+app.post('/analyze', (req, res) => {
+  try {
+    const { url } = req.body;
 
-// GET /dashboard - Mock store analytics
-app.get("/dashboard", (req, res) => {
-  res.json({
-    conversionRate: 2.4,
-    visitors: 1200,
-    orders: 28,
-    issues: [
-      "High drop-off on product page",
-      "Slow loading pages",
-      "Missing product images",
-    ],
-  });
-});
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
 
-// POST /scan - Simulate scanning a Shopify store (2 second delay)
-app.post("/scan", (req, res) => {
-  const { storeUrl } = req.body;
+    console.log(`Analyzing store: ${url}`);
 
-  if (!storeUrl) {
-    return res.status(400).json({ error: "storeUrl is required" });
-  }
-
-  console.log(`Scanning store: ${storeUrl} ...`);
-
-  setTimeout(() => {
     res.json({
-      score: 62,
+      score: 68,
+      metrics: {
+        conversionRate: '3.2%',
+        visitors: 24521,
+        addToCart: '8.7%',
+        checkoutDrop: '42.1%'
+      },
       issues: [
-        "Users leaving product page",
-        "Checkout abandonment high",
+        { title: 'Missing product images', severity: 'High', page: '/product' },
+        { title: 'Slow page load', severity: 'High', page: '/home' },
+        { title: 'Weak CTA', severity: 'Medium', page: '/product' },
+        { title: 'Broken links', severity: 'Low', page: '/footer' }
       ],
       recommendations: [
-        "Improve product images",
-        "Reduce load time",
-      ],
+        { text: 'Improve product images', impact: '+12% conversion' },
+        { text: 'Reduce load time', impact: '+8% conversion' },
+        { text: 'Fix checkout flow', impact: '+18% conversion' }
+      ]
     });
-  }, 2000);
+  } catch (err) {
+    res.status(500).json({ error: 'Analysis failed' });
+  }
 });
 
-
-
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
