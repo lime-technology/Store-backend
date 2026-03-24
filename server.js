@@ -87,6 +87,9 @@ app.post('/analyze', (req, res) => {
 
 // POST /scan - Full audit: fetches real HTML, extracts SEO/image data
 app.post('/scan', async (req, res) => {
+
+
+  
   try {
     const { url } = req.body;
     if (!url) {
@@ -111,6 +114,8 @@ app.post('/scan', async (req, res) => {
         issues: [{ issue: 'URL not reachable', severity: 'High' }],
         suggestions: ['Ensure the store URL is public and not password protected.'],
       });
+
+      
     }
 
     const responseTime = Date.now() - startTime;
@@ -293,6 +298,59 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start server ──────────────────────────────────────────────────
+
+// 🔥 AI ANALYSIS ROUTE
+app.post("/ai-analysis", async (req, res) => {
+  try {
+    const { scanData } = req.body;
+
+    if (!scanData) {
+      return res.status(400).json({
+        success: false,
+        error: "scanData is required",
+      });
+    }
+
+    const OpenAI = require("openai");
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const prompt = `
+Analyze this Shopify store data and give actionable insights:
+
+URL: ${scanData.url}
+Score: ${scanData.score}
+Page Size: ${scanData.pageSize}
+Issues: ${scanData.issues.map(i => i.issue || i).join(", ")}
+
+Give:
+1. Problems
+2. Fixes
+3. Priority
+`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    res.json({
+      success: true,
+      ai: response.choices[0].message.content,
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({
+      success: false,
+      error: "AI failed",
+    });
+  }
+});
+
+
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
