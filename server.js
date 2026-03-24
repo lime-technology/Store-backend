@@ -44,7 +44,7 @@ app.get('/', (req, res) => {
 
 // GET /health - Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json({ status: 'ok v4' });
 });
 
 // GET /test - API working check
