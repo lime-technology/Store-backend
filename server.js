@@ -369,3 +369,54 @@ process.on('SIGTERM', () => {
   console.log('SIGTERM received — shutting down gracefully');
   server.close(() => process.exit(0));
 });
+
+
+
+const puppeteer = require("puppeteer");
+
+app.post("/puppeteer-scan", async (req, res) => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ error: "URL required" });
+    }
+
+    const browser = await puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    const page = await browser.newPage();
+
+    const start = Date.now();
+
+    await page.goto(url, {
+      waitUntil: "networkidle2",
+      timeout: 60000,
+    });
+
+    const loadTime = Date.now() - start;
+
+    const data = await page.evaluate(() => ({
+      domNodes: document.querySelectorAll("*").length,
+      images: document.querySelectorAll("img").length,
+      buttons: document.querySelectorAll("button").length,
+    }));
+
+    await browser.close();
+
+    res.json({
+      success: true,
+      loadTime,
+      ...data,
+    });
+  } catch (err) {
+    console.error("Puppeteer Error:", err.message);
+
+    res.status(500).json({
+      success: false,
+      error: "Scan failed",
+    });
+  }
+});
+
