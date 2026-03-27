@@ -4,6 +4,8 @@ const https = require("https");
 const http = require("http");
 const OpenAI = require("openai");
 const puppeteer = require("puppeteer");
+const lighthouse = require("lighthouse");
+const chromeLauncher = require("chrome-launcher");
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -113,7 +115,11 @@ app.post("/puppeteer-scan", async (req, res) => {
   try {
     browser = await puppeteer.launch({
       headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
     });
 
     const page = await browser.newPage();
@@ -141,6 +147,50 @@ app.post("/puppeteer-scan", async (req, res) => {
     res.status(500).json({ success: false, error: "Scan failed" });
   } finally {
     if (browser) await browser.close();
+  }
+});
+
+// ================= LIGHTHOUSE ROUTE =================
+
+app.post("/lighthouse", async (req, res) => {
+  const { url } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ error: "URL required" });
+  }
+
+  let chrome;
+
+  try {
+    chrome = await chromeLauncher.launch({
+      chromeFlags: ["--headless", "--no-sandbox", "--disable-gpu"],
+    });
+
+    const result = await lighthouse(url, {
+      port: chrome.port,
+      output: "json",
+      logLevel: "error",
+      timeout: 60000,
+    });
+
+    const scores = result.lhr.categories;
+
+    res.json({
+      success: true,
+      performance: scores.performance.score * 100,
+      seo: scores.seo.score * 100,
+      accessibility: scores.accessibility.score * 100,
+      bestPractices: scores["best-practices"].score * 100,
+    });
+  } catch (err) {
+    console.error("Lighthouse error:", err.message);
+
+    res.status(500).json({
+      success: false,
+      error: "Lighthouse failed",
+    });
+  } finally {
+    if (chrome) await chrome.kill();
   }
 });
 
@@ -444,7 +494,7 @@ Analyze this Shopify store data and give actionable insights:
 URL: ${scanData.url}
 Score: ${scanData.score}
 Page Size: ${scanData.pageSize}
-Issues: ${scanData.issues.map((i) => i.issue || i).join(", ")}
+Issues: ${(scanData.issues || []).map((i) => i.issue || i).join(", ")}
 
 Give:
 1. Problems
