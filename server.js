@@ -6,6 +6,7 @@ const OpenAI = require("openai");
 const puppeteer = require("puppeteer");
 const lighthouse = require("lighthouse");
 const chromeLauncher = require("chrome-launcher");
+const apiKey = process.env.GOOGLE_API_KEY;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
