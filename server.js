@@ -6,6 +6,8 @@ const OpenAI = require("openai");
 const puppeteer = require("puppeteer");
 const fetch = require("node-fetch");
 const apiKey = process.env.GOOGLE_API_KEY;
+const lighthouse = require("lighthouse");
+const chromeLauncher = require("chrome-launcher");
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -168,16 +170,32 @@ app.post("/pagespeed", async (req, res) => {
       `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}`
     );
 
-    const data = await response.json();
+const data = await response.json();
+// ✅ FIRST check
+if (!data.lighthouseResult) {
+  return res.status(500).json({
+    success: false,
+    error: "Invalid PageSpeed response",
+    fullData: data
+  });
+}
 
-    res.json({
-      success: true,
-      performance: data.lighthouseResult.categories.performance.score * 100,
-      seo: data.lighthouseResult.categories.seo.score * 100,
-      accessibility: data.lighthouseResult.categories.accessibility.score * 100,
-      bestPractices:
-        data.lighthouseResult.categories["best-practices"].score * 100,
-    });
+// ✅ ONLY ONE RESPONSE
+res.json({
+  success: true,
+  performance: data.lighthouseResult?.categories?.performance?.score
+    ? data.lighthouseResult.categories.performance.score * 100
+    : 0,
+  seo: data.lighthouseResult?.categories?.seo?.score
+    ? data.lighthouseResult.categories.seo.score * 100
+    : 0,
+  accessibility: data.lighthouseResult?.categories?.accessibility?.score
+    ? data.lighthouseResult.categories.accessibility.score * 100
+    : 0,
+bestPractices: data.lighthouseResult?.categories?.["best-practices"]?.score
+  ? data.lighthouseResult.categories["best-practices"].score * 100
+  : 0,
+});
   } catch (err) {
     console.error("PageSpeed error:", err.message);
 
