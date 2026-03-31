@@ -4,7 +4,7 @@ const https = require("https");
 const http = require("http");
 const OpenAI = require("openai");
 const puppeteer = require("puppeteer");
-
+const fetch = require("node-fetch");
 const apiKey = process.env.GOOGLE_API_KEY;
 
 const openai = new OpenAI({
