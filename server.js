@@ -4,8 +4,7 @@ const https = require("https");
 const http = require("http");
 const OpenAI = require("openai");
 const puppeteer = require("puppeteer");
-const lighthouse = require("lighthouse");
-const chromeLauncher = require("chrome-launcher");
+
 const apiKey = process.env.GOOGLE_API_KEY;
 
 const openai = new OpenAI({
@@ -153,6 +152,43 @@ app.post("/puppeteer-scan", async (req, res) => {
     if (browser) await browser.close();
   }
 });
+
+
+app.post("/pagespeed", async (req, res) => {
+  const { url } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ error: "URL required" });
+  }
+
+  try {
+    const apiKey = process.env.GOOGLE_API_KEY;
+
+    const response = await fetch(
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}`
+    );
+
+    const data = await response.json();
+
+    res.json({
+      success: true,
+      performance: data.lighthouseResult.categories.performance.score * 100,
+      seo: data.lighthouseResult.categories.seo.score * 100,
+      accessibility: data.lighthouseResult.categories.accessibility.score * 100,
+      bestPractices:
+        data.lighthouseResult.categories["best-practices"].score * 100,
+    });
+  } catch (err) {
+    console.error("PageSpeed error:", err.message);
+
+    res.status(500).json({
+      success: false,
+      error: "PageSpeed failed",
+    });
+  }
+});
+
+
 
 // ================= LIGHTHOUSE ROUTE =================
 
