@@ -166,8 +166,8 @@ app.post("/pagespeed", async (req, res) => {
   try {
     const apiKey = process.env.GOOGLE_API_KEY;
 
-  const response = await fetch(
-  `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile`
+const response = await fetch(
+  `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile&category=performance`
 );
 
 const data = await response.json();
