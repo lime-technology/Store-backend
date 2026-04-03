@@ -10,6 +10,8 @@ const keys = [
   process.env.GOOGLE_API_KEY_2,
   process.env.GOOGLE_API_KEY_3
 ].filter(Boolean);
+let apiKey = keys[Math.floor(Math.random() * keys.length)];
+
 
 const lighthouse = require("lighthouse");
 const chromeLauncher = require("chrome-launcher");
