@@ -171,7 +171,7 @@ app.post("/pagespeed", async (req, res) => {
   }
 
   try {
-let apiKey = keys[Math.floor(Math.random() * keys.length)];
+
 
 const response = await fetch(
   `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile&category=performance`
