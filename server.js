@@ -10,7 +10,7 @@ const keys = [
   process.env.GOOGLE_API_KEY_2,
   process.env.GOOGLE_API_KEY_3
 ].filter(Boolean);
-let apiKey = keys[Math.floor(Math.random() * keys.length)];
+
 
 
 const lighthouse = require("lighthouse");
@@ -170,28 +170,39 @@ app.post("/pagespeed", async (req, res) => {
     return res.status(400).json({ error: "URL required" });
   }
 
+  if (keys.length === 0) {
+    return res.status(500).json({
+      success: false,
+      error: "No API keys loaded"
+    });
+  }
+
   try {
+    // ✅ हर request में new key
+    let apiKey = keys[Math.floor(Math.random() * keys.length)];
+
+    console.log("Using API key:", apiKey);
+
+    let response = await fetch(
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile&category=performance`
+    );
+    
+
+    let data = await response.json();
 
 
-const response = await fetch(
-  `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile&category=performance`
-);
+    if (data.error && keys.length > 1) {
+      console.log("Switching API key...");
 
-let data = await response.json();
+      apiKey = keys[Math.floor(Math.random() * keys.length)];
 
-// 🔥 retry if quota exceeded
-if (data.error && data.error.code === 429 && keys.length > 1) {
-  console.log("Quota exceeded, switching API key...");
+      response = await fetch(
+        `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile&category=performance`
+      );
 
-  apiKey = keys[Math.floor(Math.random() * keys.length)];
+      data = await response.json();
+    }
 
-  const retryResponse = await fetch(
-    `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile&category=performance`
-  );
-
-  data = await retryResponse.json();
-}
-// ✅ FIRST check
 if (!data.lighthouseResult) {
   return res.status(500).json({
     success: false,
