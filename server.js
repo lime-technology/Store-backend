@@ -13,8 +13,7 @@ const keys = [
 
 
 
-const lighthouse = require("lighthouse");
-const chromeLauncher = require("chrome-launcher");
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
