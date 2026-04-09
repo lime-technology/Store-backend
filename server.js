@@ -205,13 +205,7 @@ app.post("/pagespeed", async (req, res) => {
     // ✅ retry system
     const data = await fetchWithRetry(url);
 
-    if (!data.lighthouseResult) {
-      return res.json({
-        success: false,
-        error: "No Lighthouse data",
-        raw: data
-      });
-    }
+
 
 if (!data.lighthouseResult || !data.lighthouseResult.categories) {
   return res.status(500).json({
