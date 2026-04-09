@@ -11,7 +11,13 @@ const keys = [
   process.env.GOOGLE_API_KEY_3
 ].filter(Boolean);
 
+let currentIndex = 0;
 
+function getKey() {
+  const key = keys[currentIndex];
+  currentIndex = (currentIndex + 1) % keys.length;
+  return key;
+}
 
 
 
@@ -159,6 +165,29 @@ app.post("/analyze", (req, res) => {
 //   }
 // });
 
+const cache = new Map();
+
+async function fetchWithRetry(url) {
+  for (let i = 0; i < keys.length; i++) {
+    const apiKey = getKey();
+
+    const res = await fetch(
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=desktop`
+    );
+
+    const data = await res.json();
+
+    if (!data.error) return data;
+
+    if (data.error.code !== 429) {
+      throw new Error(data.error.message);
+    }
+  }
+
+  throw new Error("All API keys exhausted");
+}
+
+
 
 app.post("/pagespeed", async (req, res) => {
   const { url } = req.body;
@@ -167,59 +196,36 @@ app.post("/pagespeed", async (req, res) => {
     return res.status(400).json({ error: "URL required" });
   }
 
-  if (keys.length === 0) {
-    return res.status(500).json({
-      success: false,
-      error: "No API keys loaded"
-    });
-  }
-
   try {
-    let apiKey = keys[Math.floor(Math.random() * keys.length)];
-
-    const response = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=desktop`
-    );
-
-    const text = await response.text();
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch {
-      return res.status(500).json({
-        success: false,
-        error: "Invalid JSON from Google",
-        raw: text
-      });
+    // ✅ cache check
+    if (cache.has(url)) {
+      return res.json(cache.get(url));
     }
 
-    // 🔴 Google error (quota etc)
-    if (data.error) {
-      return res.status(500).json({
-        success: false,
-        error: data.error.message,
-        raw: data
-      });
-    }
+    // ✅ retry system
+    const data = await fetchWithRetry(url);
 
-    // 🔴 safety check
     if (!data.lighthouseResult) {
-      return res.status(500).json({
+      return res.json({
         success: false,
-        error: "No Lighthouse result",
+        error: "No Lighthouse data",
         raw: data
       });
     }
 
-    return res.json({
+    const result = {
       success: true,
       performance: data.lighthouseResult.categories.performance.score * 100,
       seo: data.lighthouseResult.categories.seo.score * 100,
       accessibility: data.lighthouseResult.categories.accessibility.score * 100,
       bestPractices:
         data.lighthouseResult.categories["best-practices"].score * 100,
-    });
+    };
+
+    // ✅ cache store
+    cache.set(url, result);
+
+    return res.json(result);
 
   } catch (err) {
     return res.status(500).json({
@@ -228,7 +234,6 @@ app.post("/pagespeed", async (req, res) => {
     });
   }
 });
-
 
 
 
