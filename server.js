@@ -121,25 +121,23 @@ app.post("/puppeteer-scan", async (req, res) => {
   let browser;
 
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--single-process",
-        "--no-zygote",
-      ],
-    });
+browser = await puppeteer.launch({
+  headless: true,
+  args: [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu"
+  ],
+});
 
     const page = await browser.newPage();
     const start = Date.now();
 
-    await page.goto(url, {
-      waitUntil: ["domcontentloaded", "networkidle0"],
-      timeout: 60000,
-    });
+ await page.goto(url, {
+  waitUntil: "domcontentloaded",
+  timeout: 15000,
+});
 
     const loadTime = Date.now() - start;
 
@@ -186,7 +184,7 @@ console.log("Using API Key:", apiKey);
 console.log("URL:", url);
     
 let response = await fetch(
-  `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile`,
+  `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=desktop`,
   {
     signal: controller.signal
   }
@@ -204,7 +202,9 @@ let response = await fetch(
   });
 }
 
-clearTimeout(timeout);
+finally {
+  clearTimeout(timeout);
+}
 
 let data;
 
@@ -230,7 +230,7 @@ try {
       apiKey = keys[Math.floor(Math.random() * keys.length)];
 
       response = await fetch(
-        `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile`
+        `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=desktop`
       );
 
       data = await response.json();
