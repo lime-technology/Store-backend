@@ -213,14 +213,23 @@ app.post("/pagespeed", async (req, res) => {
       });
     }
 
-    const result = {
-      success: true,
-      performance: data.lighthouseResult.categories.performance.score * 100,
-      seo: data.lighthouseResult.categories.seo.score * 100,
-      accessibility: data.lighthouseResult.categories.accessibility.score * 100,
-      bestPractices:
-        data.lighthouseResult.categories["best-practices"].score * 100,
-    };
+if (!data.lighthouseResult || !data.lighthouseResult.categories) {
+  return res.status(500).json({
+    success: false,
+    error: "Invalid API response",
+    raw: data
+  });
+}
+
+const categories = data.lighthouseResult.categories;
+
+const result = {
+  success: true,
+  performance: (categories.performance?.score || 0) * 100,
+  seo: (categories.seo?.score || 0) * 100,
+  accessibility: (categories.accessibility?.score || 0) * 100,
+  bestPractices: (categories["best-practices"]?.score || 0) * 100,
+};
 
     // ✅ cache store
     cache.set(url, result);
