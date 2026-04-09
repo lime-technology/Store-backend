@@ -179,10 +179,20 @@ app.post("/pagespeed", async (req, res) => {
   try {
     let apiKey = keys[Math.floor(Math.random() * keys.length)];
 
-    let response = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile`
-    );
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 20000);
 
+let response = await fetch(
+  `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile`,
+  {
+    signal: controller.signal
+  }
+);
+
+clearTimeout(timeout);
+
+
+    
     let data = await response.json();
 
     // 🔥 retry
