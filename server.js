@@ -180,7 +180,7 @@ app.post("/pagespeed", async (req, res) => {
     let apiKey = keys[Math.floor(Math.random() * keys.length)];
 
 const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), 20000);
+const timeout = setTimeout(() => controller.abort(), 12000);
 
 console.log("Using API Key:", apiKey);
 console.log("URL:", url);
