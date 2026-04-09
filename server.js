@@ -3,7 +3,7 @@ const cors = require("cors");
 const https = require("https");
 const http = require("http");
 const OpenAI = require("openai");
-const puppeteer = require("puppeteer");
+// const puppeteer = require("puppeteer");
 const fetch = require("node-fetch");
 const keys = [
   process.env.GOOGLE_API_KEY,
@@ -177,59 +177,48 @@ app.post("/pagespeed", async (req, res) => {
   }
 
   try {
-    // ✅ हर request में new key
     let apiKey = keys[Math.floor(Math.random() * keys.length)];
 
-    console.log("Using API key:", apiKey);
-
     let response = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile&category=performance`
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile`
     );
-    
 
     let data = await response.json();
 
-
+    // 🔥 retry
     if (data.error && keys.length > 1) {
-      console.log("Switching API key...");
-
       apiKey = keys[Math.floor(Math.random() * keys.length)];
 
       response = await fetch(
-        `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile&category=performance`
+        `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile`
       );
 
       data = await response.json();
     }
 
-if (!data.lighthouseResult) {
-  return res.status(500).json({
-    success: false,
-    error: "Invalid PageSpeed response",
-    fullData: data
-  });
-}
+    // ❌ अगर data नहीं मिला
+    if (!data.lighthouseResult) {
+      return res.status(500).json({
+        success: false,
+        error: "Invalid PageSpeed response",
+        fullData: data
+      });
+    }
 
-// ✅ ONLY ONE RESPONSE
-res.json({
-  success: true,
-  performance: data.lighthouseResult?.categories?.performance?.score
-    ? data.lighthouseResult.categories.performance.score * 100
-    : 0,
-  seo: data.lighthouseResult?.categories?.seo?.score
-    ? data.lighthouseResult.categories.seo.score * 100
-    : 0,
-  accessibility: data.lighthouseResult?.categories?.accessibility?.score
-    ? data.lighthouseResult.categories.accessibility.score * 100
-    : 0,
-bestPractices: data.lighthouseResult?.categories?.["best-practices"]?.score
-  ? data.lighthouseResult.categories["best-practices"].score * 100
-  : 0,
-});
+    // ✅ FINAL RESPONSE (ये missing था)
+    return res.json({
+      success: true,
+      performance: data.lighthouseResult.categories.performance.score * 100,
+      seo: data.lighthouseResult.categories.seo.score * 100,
+      accessibility: data.lighthouseResult.categories.accessibility.score * 100,
+      bestPractices:
+        data.lighthouseResult.categories["best-practices"].score * 100,
+    });
+
   } catch (err) {
     console.error("PageSpeed error:", err.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: "PageSpeed failed",
     });
@@ -238,49 +227,6 @@ bestPractices: data.lighthouseResult?.categories?.["best-practices"]?.score
 
 
 
-// ================= LIGHTHOUSE ROUTE =================
-
-app.post("/lighthouse", async (req, res) => {
-  const { url } = req.body;
-
-  if (!url) {
-    return res.status(400).json({ error: "URL required" });
-  }
-
-  let chrome;
-
-  try {
-    chrome = await chromeLauncher.launch({
-      chromeFlags: ["--headless", "--no-sandbox", "--disable-gpu"],
-    });
-
-    const result = await lighthouse(url, {
-      port: chrome.port,
-      output: "json",
-      logLevel: "error",
-      timeout: 60000,
-    });
-
-    const scores = result.lhr.categories;
-
-    res.json({
-      success: true,
-      performance: scores.performance.score * 100,
-      seo: scores.seo.score * 100,
-      accessibility: scores.accessibility.score * 100,
-      bestPractices: scores["best-practices"].score * 100,
-    });
-  } catch (err) {
-    console.error("Lighthouse error:", err.message);
-
-    res.status(500).json({
-      success: false,
-      error: "Lighthouse failed",
-    });
-  } finally {
-    if (chrome) await chrome.kill();
-  }
-});
 
 // POST /scan - Full audit: fetches real HTML, extracts SEO/image data
 app.post("/scan", async (req, res) => {
