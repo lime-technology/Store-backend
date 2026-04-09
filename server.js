@@ -182,6 +182,9 @@ app.post("/pagespeed", async (req, res) => {
 const controller = new AbortController();
 const timeout = setTimeout(() => controller.abort(), 20000);
 
+console.log("Using API Key:", apiKey);
+console.log("URL:", url);
+    
 let response = await fetch(
   `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=mobile`,
   {
@@ -189,11 +192,38 @@ let response = await fetch(
   }
 );
 
+
+    if (!response.ok) {
+  const errorText = await response.text();
+  console.log("API ERROR:", errorText);
+
+  return res.status(500).json({
+    success: false,
+    error: "Google API error",
+    raw: errorText
+  });
+}
+
 clearTimeout(timeout);
+
+let data;
+
+try {
+  data = await response.json();
+} catch (e) {
+  const text = await response.text();
+  console.log("RAW RESPONSE (not JSON):", text);
+
+  return res.status(500).json({
+    success: false,
+    error: "Invalid JSON response from Google API",
+    raw: text
+  });
+}
 
 
     
-    let data = await response.json();
+  
 
     // 🔥 retry
     if (data.error && keys.length > 1) {
@@ -225,14 +255,16 @@ clearTimeout(timeout);
         data.lighthouseResult.categories["best-practices"].score * 100,
     });
 
-  } catch (err) {
-    console.error("PageSpeed error:", err.message);
-
-    return res.status(500).json({
-      success: false,
-      error: "PageSpeed failed",
-    });
   }
+catch (err) {
+  console.error("FULL ERROR:", err);
+
+  res.status(500).json({
+    success: false,
+    error: err.message,
+    stack: err.stack
+  });
+}
 });
 
 
