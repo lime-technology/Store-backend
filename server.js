@@ -3,7 +3,7 @@ const cors = require("cors");
 const https = require("https");
 const http = require("http");
 const OpenAI = require("openai");
-const puppeteer = require("puppeteer");
+// const puppeteer = require("puppeteer");
 const fetch = require("node-fetch");
 const keys = [
   process.env.GOOGLE_API_KEY,
@@ -105,59 +105,59 @@ app.post("/analyze", (req, res) => {
   }
 });
 
-app.post("/puppeteer-scan", async (req, res) => {
-  const { url } = req.body;
+// app.post("/puppeteer-scan", async (req, res) => {
+//   const { url } = req.body;
 
-  if (!url) {
-    return res.status(400).json({ error: "URL required" });
-  }
+//   if (!url) {
+//     return res.status(400).json({ error: "URL required" });
+//   }
 
-  try {
-    new URL(url);
-  } catch {
-    return res.status(400).json({ error: "Invalid URL" });
-  }
+//   try {
+//     new URL(url);
+//   } catch {
+//     return res.status(400).json({ error: "Invalid URL" });
+//   }
 
-  let browser;
+//   let browser;
 
-  try {
-browser = await puppeteer.launch({
-  headless: true,
-  args: [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu"
-  ],
-});
+//   try {
+// browser = await puppeteer.launch({
+//   headless: true,
+//   args: [
+//     "--no-sandbox",
+//     "--disable-setuid-sandbox",
+//     "--disable-dev-shm-usage",
+//     "--disable-gpu"
+//   ],
+// });
 
-    const page = await browser.newPage();
-    const start = Date.now();
+//     const page = await browser.newPage();
+//     const start = Date.now();
 
- await page.goto(url, {
-  waitUntil: "domcontentloaded",
-  timeout: 15000,
-});
+//  await page.goto(url, {
+//   waitUntil: "domcontentloaded",
+//   timeout: 15000,
+// });
 
-    const loadTime = Date.now() - start;
+//     const loadTime = Date.now() - start;
 
-    const data = await page.evaluate(() => ({
-      domNodes: document.querySelectorAll("*").length,
-      images: document.querySelectorAll("img").length,
-      buttons: document.querySelectorAll("button").length,
-    }));
+//     const data = await page.evaluate(() => ({
+//       domNodes: document.querySelectorAll("*").length,
+//       images: document.querySelectorAll("img").length,
+//       buttons: document.querySelectorAll("button").length,
+//     }));
 
-    res.json({
-      success: true,
-      loadTime,
-      ...data,
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, error: "Scan failed" });
-  } finally {
-    if (browser) await browser.close();
-  }
-});
+//     res.json({
+//       success: true,
+//       loadTime,
+//       ...data,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ success: false, error: "Scan failed" });
+//   } finally {
+//     if (browser) await browser.close();
+//   }
+// });
 
 
 app.post("/pagespeed", async (req, res) => {
@@ -177,75 +177,31 @@ app.post("/pagespeed", async (req, res) => {
   try {
     let apiKey = keys[Math.floor(Math.random() * keys.length)];
 
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), 12000);
+    console.log("Using API Key:", apiKey);
+    console.log("URL:", url);
 
-console.log("Using API Key:", apiKey);
-console.log("URL:", url);
-    
-let response = await fetch(
-  `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=desktop`,
-  {
-    signal: controller.signal
-  }
-);
-
+    const response = await fetch(
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=desktop`
+    );
 
     if (!response.ok) {
-  const errorText = await response.text();
-  console.log("API ERROR:", errorText);
-
-  return res.status(500).json({
-    success: false,
-    error: "Google API error",
-    raw: errorText
-  });
-}
-
-finally {
-  clearTimeout(timeout);
-}
-
-let data;
-
-try {
-  data = await response.json();
-} catch (e) {
-  const text = await response.text();
-  console.log("RAW RESPONSE (not JSON):", text);
-
-  return res.status(500).json({
-    success: false,
-    error: "Invalid JSON response from Google API",
-    raw: text
-  });
-}
-
-
-    
-  
-
-    // 🔥 retry
-    if (data.error && keys.length > 1) {
-      apiKey = keys[Math.floor(Math.random() * keys.length)];
-
-      response = await fetch(
-        `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&key=${apiKey}&strategy=desktop`
-      );
-
-      data = await response.json();
-    }
-
-    // ❌ अगर data नहीं मिला
-    if (!data.lighthouseResult) {
+      const text = await response.text();
       return res.status(500).json({
         success: false,
-        error: "Invalid PageSpeed response",
-        fullData: data
+        error: "Google API failed",
+        raw: text
       });
     }
 
-    // ✅ FINAL RESPONSE (ये missing था)
+    const data = await response.json(); // ✅ MUST
+
+    if (!data.lighthouseResult) {
+      return res.status(500).json({
+        success: false,
+        error: "Invalid response"
+      });
+    }
+
     return res.json({
       success: true,
       performance: data.lighthouseResult.categories.performance.score * 100,
@@ -255,17 +211,23 @@ try {
         data.lighthouseResult.categories["best-practices"].score * 100,
     });
 
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: err.message
+    });
   }
-catch (err) {
-  console.error("FULL ERROR:", err);
-
-  res.status(500).json({
-    success: false,
-    error: err.message,
-    stack: err.stack
-  });
-}
 });
+
+
+
+
+
+
+    
+
+
+
 
 
 
