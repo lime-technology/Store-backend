@@ -573,4 +573,4 @@ process.on("SIGTERM", () => {
   server.close(() => process.exit(0));
 });
 
-console.log("Loaded Keys:", keys);
+console.log("API Keys Loaded:", keys.length);
