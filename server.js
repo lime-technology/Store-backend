@@ -177,28 +177,38 @@ app.post("/pagespeed", async (req, res) => {
   try {
     let apiKey = keys[Math.floor(Math.random() * keys.length)];
 
-    console.log("Using API Key:", apiKey);
-    console.log("URL:", url);
-
     const response = await fetch(
       `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=desktop`
     );
 
-    if (!response.ok) {
-      const text = await response.text();
+    const text = await response.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
       return res.status(500).json({
         success: false,
-        error: "Google API failed",
+        error: "Invalid JSON from Google",
         raw: text
       });
     }
 
-    const data = await response.json(); // ✅ MUST
+    // 🔴 Google error (quota etc)
+    if (data.error) {
+      return res.status(500).json({
+        success: false,
+        error: data.error.message,
+        raw: data
+      });
+    }
 
+    // 🔴 safety check
     if (!data.lighthouseResult) {
       return res.status(500).json({
         success: false,
-        error: "Invalid response"
+        error: "No Lighthouse result",
+        raw: data
       });
     }
 
@@ -218,8 +228,6 @@ app.post("/pagespeed", async (req, res) => {
     });
   }
 });
-
-
 
 
 
