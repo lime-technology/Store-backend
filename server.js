@@ -19,7 +19,7 @@ function getKey() {
   return key;
 }
 
-
+console.log("OPENAI KEY LOADED:", !!process.env.OPENAI_API_KEY);
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -166,8 +166,15 @@ app.post("/analyze", (req, res) => {
 // });
 
 const cache = new Map();
+setInterval(() => {
+  cache.clear();
+  console.log("Cache cleared");
+}, 1000 * 60 * 30); // every 30 min
 
 async function fetchWithRetry(url) {
+  if (keys.length === 0) {
+  console.error("❌ No Google API keys found");
+}
   for (let i = 0; i < keys.length; i++) {
     const apiKey = getKey();
 
@@ -542,6 +549,8 @@ app.post("/ai-analysis", async (req, res) => {
       });
     }
 
+   console.log("OPENAI KEY LOADED:", !!process.env.OPENAI_API_KEY);
+
     const prompt = `
 Analyze this Shopify store data and give actionable insights:
 
@@ -556,21 +565,38 @@ Give:
 3. Priority
 `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-    });
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 15000);
+
+const response = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: prompt }],
+  signal: controller.signal
+});
+
+clearTimeout(timeout);
+
+    console.log("AI RAW:", JSON.stringify(response));
+
+if (!response || !response.choices || !response.choices[0]) {
+  return res.json({
+    success: true,
+    ai: "AI temporarily unavailable. Showing basic insights."
+  });
+}
 
     res.json({
       success: true,
       ai: response.choices[0].message.content,
     });
+
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({
-      success: false,
-      error: "AI failed",
-    });
+    console.error("AI ERROR:", err.message);
+
+res.json({
+  success: true,
+  ai: "AI temporarily unavailable. Please try again."
+});
   }
 });
 
