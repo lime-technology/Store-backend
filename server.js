@@ -583,7 +583,7 @@ const response = await openai.responses.create({
   input: prompt,
 });
 
-if (!response || !response.output || !response.output[0]?.content?.[0]?.text)
+if (!response || !response.output || !response.output[0]?.content?.[0]?.text) {
   return res.json({
     success: true,
     ai: "AI temporarily unavailable. Showing basic insights."
@@ -594,7 +594,7 @@ const aiText = response?.output?.[0]?.content?.[0]?.text || "AI response empty";
 
 res.json({
   success: true,
-  ai: aiText || "AI response empty",
+  ai: aiText
 });
 
   } catch (err) {
