@@ -565,16 +565,20 @@ Give:
 3. Priority
 `;
 
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), 15000);
+// const controller = new AbortController();
+// const timeout = setTimeout(() => controller.abort(), 15000);
 
 const response = await openai.chat.completions.create({
   model: "gpt-4o-mini",
-  messages: [{ role: "user", content: prompt }],
-  signal: controller.signal
+  messages: [
+    {
+      role: "user",
+      content: prompt
+    }
+  ]
 });
 
-clearTimeout(timeout);
+
 
     console.log("AI RAW:", JSON.stringify(response));
 
