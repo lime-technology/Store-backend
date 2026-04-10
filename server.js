@@ -568,31 +568,22 @@ Give:
 // const controller = new AbortController();
 // const timeout = setTimeout(() => controller.abort(), 15000);
 
-const response = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
-  messages: [
-    {
-      role: "user",
-      content: prompt
-    }
-  ]
+const response = await openai.responses.create({
+  model: "gpt-4.1-mini",
+  input: prompt,
 });
 
-
-
-    console.log("AI RAW:", JSON.stringify(response));
-
-if (!response || !response.choices || !response.choices[0]) {
+if (!response || !response.output) {
   return res.json({
     success: true,
     ai: "AI temporarily unavailable. Showing basic insights."
   });
 }
 
-    res.json({
-      success: true,
-      ai: response.choices[0].message.content,
-    });
+res.json({
+  success: true,
+  ai: response.output[0].content[0].text,
+});
 
   } catch (err) {
     console.error("AI ERROR:", err.message);
