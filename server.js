@@ -172,8 +172,8 @@ setInterval(() => {
 }, 1000 * 60 * 30); // every 30 min
 
 async function fetchWithRetry(url) {
-  if (keys.length === 0) {
-  console.error("❌ No Google API keys found");
+if (keys.length === 0) {
+  throw new Error("No Google API keys found");
 }
   for (let i = 0; i < keys.length; i++) {
     const apiKey = getKey();
@@ -551,18 +551,28 @@ app.post("/ai-analysis", async (req, res) => {
 
    console.log("OPENAI KEY LOADED:", !!process.env.OPENAI_API_KEY);
 
-    const prompt = `
-Analyze this Shopify store data and give actionable insights:
+const prompt = `
+You are an expert Shopify CRO and SEO analyst.
 
-URL: ${scanData.url}
-Score: ${scanData.score}
-Page Size: ${scanData.pageSize}
-Issues: ${(scanData.issues || []).map((i) => i.issue || i).join(", ")}
+Analyze the given store data and provide insights.
+
+Store Data:
+- URL: ${scanData.url}
+- Score: ${scanData.score}
+- Page Size: ${scanData.pageSize}
+- Issues: ${(scanData.issues || []).map((i) => i.issue || i).join(", ")}
+
+IMPORTANT:
+- Do NOT say you cannot access the website
+- Only analyze based on given data
 
 Give:
 1. Problems
 2. Fixes
 3. Priority
+4. Conversion Impact
+
+Keep answer clean and in bullet points.
 `;
 
 // const controller = new AbortController();
@@ -573,16 +583,18 @@ const response = await openai.responses.create({
   input: prompt,
 });
 
-if (!response || !response.output) {
+if (!response || !response.output || !response.output[0]?.content?.[0]?.text)
   return res.json({
     success: true,
     ai: "AI temporarily unavailable. Showing basic insights."
   });
 }
 
+const aiText = response?.output?.[0]?.content?.[0]?.text || "AI response empty";
+
 res.json({
   success: true,
-  ai: response.output[0].content[0].text,
+  ai: aiText || "AI response empty",
 });
 
   } catch (err) {
@@ -590,7 +602,7 @@ res.json({
 
 res.json({
   success: true,
-  ai: "AI temporarily unavailable. Please try again."
+ ai: "AI failed. Check server logs."
 });
   }
 });
