@@ -236,21 +236,19 @@ app.post("/scan", async (req, res) => {
     const startTime = Date.now();
 
     try {
-      html = await fetchHTML(url);
-    } catch (fetchErr) {
-      console.error("[scan] Fetch failed:", fetchErr.message);
-      // Return a safe fallback instead of crashing
-      return res.json({
-        success: false,
-        url,
-        error: "Could not fetch the URL. Make sure it is publicly accessible.",
-        score: 0,
-        issues: [{ issue: "URL not reachable", severity: "High" }],
-        suggestions: [
-          "Ensure the store URL is public and not password protected.",
-        ],
-      });
-    }
+html = await fetchHTML(url);
+
+// 🔥 यहीं add करना है (exact location)
+if (!html || html.length < 1000) {
+  return res.json({
+    success: false,
+    url,
+    error: "Website blocked or requires JS rendering",
+    score: 0,
+    issues: [{ issue: "Blocked by website", severity: "High" }],
+    suggestions: ["Use a real browser scan (Puppeteer) for this site."]
+  });
+}
 
     const responseTime = Date.now() - startTime;
     const pageSize = Buffer.byteLength(html, "utf8");
