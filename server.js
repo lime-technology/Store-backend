@@ -27,7 +27,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// ───────── FETCH HTML ─────────
+// FETCH HTML
 function fetchHTML(url) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith("https") ? https : http;
@@ -49,59 +49,12 @@ function fetchHTML(url) {
   });
 }
 
-// ───────── BASIC ROUTES ─────────
+// ROUTES
 app.get("/", (req, res) => res.send("Server running"));
 app.get("/health", (req, res) => res.json({ status: "ok" }));
-app.get("/test", (req, res) => res.json({ status: "working" }));
 
-// ───────── PAGE SPEED ─────────
-async function fetchWithRetry(url) {
-  if (keys.length === 0) throw new Error("No API keys");
-
-  for (let i = 0; i < keys.length; i++) {
-    const key = getKey();
-
-    const res = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${key}`
-    );
-
-    const data = await res.json();
-
-    if (!data.error) return data;
-    if (data.error.code !== 429) throw new Error(data.error.message);
-  }
-
-  throw new Error("All keys failed");
-}
-
-app.post("/pagespeed", async (req, res) => {
-  const { url } = req.body;
-  if (!url) return res.status(400).json({ error: "URL required" });
-
-  try {
-    const data = await fetchWithRetry(url);
-
-    const categories = data.lighthouseResult?.categories || {};
-
-    res.json({
-      success: true,
-      performance: (categories.performance?.score || 0) * 100,
-      seo: (categories.seo?.score || 0) * 100,
-      accessibility: (categories.accessibility?.score || 0) * 100,
-      bestPractices: (categories["best-practices"]?.score || 0) * 100,
-    });
-
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// ───────── SCAN ─────────
-app.post("/scan", async (req, res) => {
-  const { url } = req.body;
-
-  if (!url) return res.status(400).json({ error: "URL required" });
-
+// ───────── SCAN FUNCTION ─────────
+async function runScan(url) {
   try {
     const start = Date.now();
     const html = await fetchHTML(url);
@@ -122,23 +75,44 @@ app.post("/scan", async (req, res) => {
 
     if (missingAlt > 0) {
       score -= 10;
-      issues.push({ title: "Images missing alt", severity: "High" });
+      issues.push({
+        title: `${missingAlt} images missing alt text`,
+        severity: "High"
+      });
     }
 
-    res.json({
+    return {
       success: true,
       score,
       pageSize: (pageSize / 1024).toFixed(1) + " KB",
       responseTime: responseTime + " ms",
       issues
-    });
+    };
 
   } catch {
-    res.status(500).json({ success: false, error: "Scan failed" });
+    return { success: false, error: "Scan failed" };
   }
+}
+
+// POST
+app.post("/scan", async (req, res) => {
+  const { url } = req.body;
+  if (!url) return res.status(400).json({ error: "URL required" });
+
+  const result = await runScan(url);
+  res.json(result);
 });
 
-// ───────── AI ANALYSIS ─────────
+// GET (VERY IMPORTANT)
+app.get("/scan", async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).json({ error: "URL required" });
+
+  const result = await runScan(url);
+  res.json(result);
+});
+
+// AI
 app.post("/ai-analysis", async (req, res) => {
   try {
     const { scanData } = req.body;
@@ -157,18 +131,8 @@ app.post("/ai-analysis", async (req, res) => {
   }
 });
 
-// ───────── START ─────────
+// START
 const PORT = process.env.PORT || 3000;
-
-const server = app.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
-});
-
-// ───────── SAFE MODE ─────────
-process.on("uncaughtException", (err) => {
-  console.error("Error:", err.message);
-});
-
-process.on("unhandledRejection", (err) => {
-  console.error("Promise Error:", err);
 });
