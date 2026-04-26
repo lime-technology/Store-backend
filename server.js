@@ -179,7 +179,7 @@ if (keys.length === 0) {
     const apiKey = getKey();
 
     const res = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=desktop`
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=mobilep`
     );
 
     const data = await res.json();
