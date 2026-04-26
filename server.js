@@ -606,17 +606,3 @@ console.log("API Keys Loaded:", keys.length);
 
 
 
-if (totalImages > 20) {
-  issues.push({
-    title: "Images not lazy loaded",
-    severity: "High",
-    fix: {
-      type: "auto",
-      message: "Enable lazy loading",
-      code: "<img loading='lazy' src='...' />",
-      shopify: "{{ image | image_tag: loading: 'lazy' }}",
-      file: "theme.liquid",
-      impact: "+25% speed"
-    }
-  });
-}
