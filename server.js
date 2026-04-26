@@ -3,15 +3,10 @@ const express = require("express");
 const cors = require("cors");
 const https = require("https");
 const http = require("http");
-const OpenAI = require("openai");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 // ── Helper: Fetch HTML ─────────────────────────
 function fetchHTML(url) {
@@ -46,7 +41,7 @@ function fetchHTML(url) {
 app.get("/", (req, res) => res.send("Server running"));
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
-// ── CORE SCAN FUNCTION (REUSABLE) ─────────────────────────
+// ── CORE SCAN FUNCTION ─────────────────────────
 async function runScan(url) {
   let html;
   const start = Date.now();
@@ -85,7 +80,7 @@ async function runScan(url) {
     });
   }
 
-  // META
+  // META DESCRIPTION
   const hasDesc = /meta.*name=["']description["']/i.test(html);
   if (!hasDesc) {
     score -= 10;
@@ -189,7 +184,7 @@ app.post("/scan", async (req, res) => {
   res.json(result);
 });
 
-// ── GET SCAN (LOVABLE SUPPORT) ─────────────────────────
+// ── GET SCAN (Lovable support) ─────────────────────────
 app.get("/scan", async (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).json({ error: "URL required" });
@@ -198,40 +193,7 @@ app.get("/scan", async (req, res) => {
   res.json(result);
 });
 
-// ── AI ANALYSIS ─────────────────────────
-app.post("/ai-analysis", async (req, res) => {
-  try {
-    const { scanData } = req.body;
-
-    const prompt = `
-You are a Shopify CRO expert.
-
-For each issue:
-- Explain problem
-- Give exact fix
-- Provide Shopify Liquid code
-- Mention file
-- Give impact %
-
-Issues:
-${JSON.stringify(scanData.issues)}
-`;
-
-    const response = await openai.responses.create({
-      model: "gpt-4.1-mini",
-      input: prompt,
-    });
-
-    const text =
-      response?.output?.[0]?.content?.[0]?.text || "No AI output";
-
-    res.json({ success: true, ai: text });
-  } catch {
-    res.json({ success: true, ai: "AI failed" });
-  }
-});
-
-// ── START ─────────────────────────
+// ── START SERVER ─────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
