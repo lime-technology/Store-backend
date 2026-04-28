@@ -146,7 +146,7 @@ if (keys.length === 0) {
     const apiKey = getKey();
 
     const res = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=mobilep`
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=mobile`
     );
 
     const data = await res.json();
@@ -176,33 +176,46 @@ app.post("/pagespeed", async (req, res) => {
       return res.json(cache.get(url));
     }
 
-    // ✅ retry system
-    const data = await fetchWithRetry(url);
 
 
 
-if (!data.lighthouseResult || !data.lighthouseResult.categories) {
-  return res.status(500).json({
-    success: false,
-    error: "Invalid API response",
-    raw: data
-  });
+let data = null;
+
+try {
+  data = await fetchWithRetry(url);
+} catch (err) {
+  console.log("PSI failed, using fallback:", err.message);
 }
 
+if (!data || !data.lighthouseResult || !data.lighthouseResult.categories) {
+  const fallbackResult = {
+    success: true,
+    fallback: true,
+    message: "PageSpeed failed, using fallback scan",
+    performance: null,
+    seo: null,
+    accessibility: null,
+    bestPractices: null
+  };
+
+  cache.set(url, fallbackResult);
+  return res.json(fallbackResult);
+}
+
+// ✅ NORMAL FLOW
 const categories = data.lighthouseResult.categories;
 
 const result = {
   success: true,
+  fallback: false,
   performance: (categories.performance?.score || 0) * 100,
   seo: (categories.seo?.score || 0) * 100,
   accessibility: (categories.accessibility?.score || 0) * 100,
   bestPractices: (categories["best-practices"]?.score || 0) * 100,
 };
 
-    // ✅ cache store
-    cache.set(url, result);
-
-    return res.json(result);
+cache.set(url, result);
+return res.json(result);
 
   } catch (err) {
     return res.status(500).json({
