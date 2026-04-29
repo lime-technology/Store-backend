@@ -3,7 +3,7 @@ const cors = require("cors");
 const https = require("https");
 const http = require("http");
 const OpenAI = require("openai");
-// const puppeteer = require("puppeteer");
+let responseTime = 0;
 const fetch = require("node-fetch");
 const keys = [
   process.env.GOOGLE_API_KEY,
@@ -78,59 +78,6 @@ app.get("/test", (req, res) => {
 
 
 
-// app.post("/puppeteer-scan", async (req, res) => {
-//   const { url } = req.body;
-
-//   if (!url) {
-//     return res.status(400).json({ error: "URL required" });
-//   }
-
-//   try {
-//     new URL(url);
-//   } catch {
-//     return res.status(400).json({ error: "Invalid URL" });
-//   }
-
-//   let browser;
-
-//   try {
-// browser = await puppeteer.launch({
-//   headless: true,
-//   args: [
-//     "--no-sandbox",
-//     "--disable-setuid-sandbox",
-//     "--disable-dev-shm-usage",
-//     "--disable-gpu"
-//   ],
-// });
-
-//     const page = await browser.newPage();
-//     const start = Date.now();
-
-//  await page.goto(url, {
-//   waitUntil: "domcontentloaded",
-//   timeout: 15000,
-// });
-
-//     const loadTime = Date.now() - start;
-
-//     const data = await page.evaluate(() => ({
-//       domNodes: document.querySelectorAll("*").length,
-//       images: document.querySelectorAll("img").length,
-//       buttons: document.querySelectorAll("button").length,
-//     }));
-
-//     res.json({
-//       success: true,
-//       loadTime,
-//       ...data,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ success: false, error: "Scan failed" });
-//   } finally {
-//     if (browser) await browser.close();
-//   }
-// });
 
 const cache = new Map();
 setInterval(() => {
@@ -249,22 +196,31 @@ app.post("/scan", async (req, res) => {
     let html = "";
     const startTime = Date.now();
 
-    try {
-html = await fetchHTML(url);
+try {
+  html = await fetchHTML(url);
 
-// 🔥 यहीं add करना है (exact location)
-if (!html || html.length < 1000) {
-  return res.json({
+  if (!html || html.length < 1000) {
+    return res.json({
+      success: false,
+      url,
+      error: "Website blocked or requires JS rendering",
+      score: 0,
+      issues: [{ issue: "Blocked by website", severity: "High" }],
+      suggestions: ["Use Puppeteer"]
+    });
+  }
+
+  // ✅ बाकी पूरा code इसी try के अंदर रहेगा
+responseTime = Date.now() - startTime;
+
+  
+} catch (err) {
+  console.error("[scan] Unexpected error:", err.message);
+  return res.status(500).json({
     success: false,
-    url,
-    error: "Website blocked or requires JS rendering",
-    score: 0,
-    issues: [{ issue: "Blocked by website", severity: "High" }],
-    suggestions: ["Use a real browser scan (Puppeteer) for this site."]
+    error: "Scan failed"
   });
 }
-
-    const responseTime = Date.now() - startTime;
     const pageSize = Buffer.byteLength(html, "utf8");
 
     // ── SEO ──────────────────────────────────────────────────────
@@ -546,7 +502,7 @@ app.post("/ai-analysis", async (req, res) => {
       });
     }
 
-   console.log("OPENAI KEY LOADED:", !!process.env.OPENAI_API_KEY);
+
 
 const prompt = `
 You are a Shopify CRO expert.
@@ -596,12 +552,6 @@ res.json({
 });
 
 
-// 🔥 tera existing render API
-app.post("/render", async (req, res) => {
-  ...
-});
-
-
 
 
 
@@ -609,10 +559,9 @@ app.post("/render", async (req, res) => {
 
 
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
-
 // ── Crash prevention: never let the process die ───────────────────
 process.on("uncaughtException", (err) => {
   console.error("[uncaughtException] Server kept alive:", err.message);
@@ -622,10 +571,7 @@ process.on("unhandledRejection", (reason) => {
   console.error("[unhandledRejection] Server kept alive:", reason);
 });
 
-process.on("SIGTERM", () => {
-  console.log("SIGTERM received — shutting down gracefully");
-  server.close(() => process.exit(0));
-});
+
 
 console.log("API Keys Loaded:", keys.length);
 
