@@ -3,7 +3,7 @@ const cors = require("cors");
 const https = require("https");
 const http = require("http");
 const OpenAI = require("openai");
-let responseTime = 0;
+
 const fetch = require("node-fetch");
 const keys = [
   process.env.GOOGLE_API_KEY,
@@ -151,15 +151,15 @@ if (!data || !data.lighthouseResult || !data.lighthouseResult.categories) {
 }
 
 // ✅ NORMAL FLOW
-const categories = data.lighthouseResult.categories;
+const categories = data?.lighthouseResult?.categories || {};
 
 const result = {
   success: true,
   fallback: false,
-  performance: (categories.performance?.score || 0) * 100,
-  seo: (categories.seo?.score || 0) * 100,
-  accessibility: (categories.accessibility?.score || 0) * 100,
-  bestPractices: (categories["best-practices"]?.score || 0) * 100,
+performance: Math.round((categories?.performance?.score || 0) * 100),
+seo: Math.round((categories?.seo?.score || 0) * 100),
+accessibility: Math.round((categories?.accessibility?.score || 0) * 100),
+bestPractices: Math.round((categories?.["best-practices"]?.score || 0) * 100),
 };
 
 cache.set(url, result);
@@ -196,6 +196,8 @@ app.post("/scan", async (req, res) => {
     let html = "";
     const startTime = Date.now();
 
+let responseTime = 0;
+    
 try {
   html = await fetchHTML(url);
 
@@ -212,8 +214,6 @@ try {
 
   // ✅ बाकी पूरा code इसी try के अंदर रहेगा
 responseTime = Date.now() - startTime;
-
-  
 } catch (err) {
   console.error("[scan] Unexpected error:", err.message);
   return res.status(500).json({
