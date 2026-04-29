@@ -150,8 +150,9 @@ const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=$
 console.log("🔥 FINAL API URL:", apiUrl);
 
 const res = await fetch(apiUrl);
+const data = await res.json();   // 🔥 ये missing था
 
-    if (!data.error) return data;
+if (!data.error) return data;
 
     if (data.error.code !== 429) {
       throw new Error(data.error.message);
