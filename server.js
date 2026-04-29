@@ -145,11 +145,11 @@ if (keys.length === 0) {
   for (let i = 0; i < keys.length; i++) {
     const apiKey = getKey();
 
-    const res = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=mobile`
-    );
+const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&strategy=mobile`;
 
-    const data = await res.json();
+console.log("🔥 FINAL API URL:", apiUrl);
+
+const res = await fetch(apiUrl);
 
     if (!data.error) return data;
 
